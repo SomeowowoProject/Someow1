@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dakdori — collaborative portfolios</title>
+<meta name="description" content="A platform to build your portfolio, find collaborators, and ship projects together.">
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="/css/screens.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ AUTH SCREEN ═══════════════════════════════════ -->
+<div class="screen" id="s-auth">
+  <div class="nav-wrapper">
+    <nav class="nav">
+      <div class="logo" onclick="goAuth()">Project Dakdori.</div>
+      <div class="nav-center"></div>
+      <div class="nav-right">
+        <button class="theme-btn" onclick="toggleTheme()">light</button>
+      </div>
+    </nav>
+  </div>
+  <div class="auth-wrap">
+    <div class="auth-title" id="auth-title">Sign in</div>
+    <div class="auth-sub" id="auth-sub">Welcome back to Dakdori</div>
+    <div class="auth-error" id="auth-error"></div>
+    <form class="auth-form" id="auth-form" onsubmit="return submitAuth(event)">
+      <input type="text" id="auth-name" placeholder="Display name" autocomplete="name" style="display:none;">
+      <input type="text" id="auth-handle" placeholder="Handle (3–24 chars)" autocomplete="username" style="display:none;">
+      <input type="text" id="auth-identifier" placeholder="Email or handle" autocomplete="username">
+      <input type="email" id="auth-email" placeholder="Email" autocomplete="email" style="display:none;">
+      <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" minlength="8">
+      <button type="submit" class="auth-submit" id="auth-submit">Sign in</button>
+    </form>
+    <div class="auth-toggle">
+      <span id="auth-toggle-text">No account?</span>
+      <a id="auth-toggle-link" onclick="toggleAuthMode()">Sign up</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ HOME ═══════════════════════════════════ -->
+<div class="screen" id="s-home">
+  <div class="nav-wrapper">
+    <nav class="nav">
+      <div class="logo" onclick="go('s-home')">Project Dakdori.</div>
+      <div class="nav-center">
+        <div class="search-row">
+          <div class="search-row-inner">
+            <div class="search-box-wrap" id="main-search-wrap">
+              <span class="search-icon-slot">📖</span>
+              <div class="search-box">
+                <input type="text" id="search-q" placeholder="Search" onkeydown="if(event.key==='Enter') doSearch()" onfocus="document.getElementById('main-search-wrap').classList.add('focused')" onblur="document.getElementById('main-search-wrap').classList.remove('focused')">
+              </div>
+            </div>
+            <button class="nav-search-btn" onclick="doSearch()">Search</button>
+          </div>
+        </div>
+      </div>
+      <div class="nav-right">
+        <button class="theme-btn" id="theme-lbl" onclick="toggleTheme()">light</button>
+        <button class="btn-new" onclick="go('s-compose')">+ New project</button>
+        <div class="avatar-nav" id="nav-avatar" onclick="goMyProfile()">YK</div>
+      </div>
+    </nav>
+    <div class="chip-bar">
+      <div class="cat-strip-wrap">
+        <button class="cat-arr hidden" id="cat-arr-l" onclick="scrollCats(-1)">‹</button>
+        <div class="cat-strip at-start" id="cat-strip"></div>
+        <button class="cat-arr" id="cat-arr-r" onclick="scrollCats(1)">›</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sb-toggle"><button onclick="toggleSB()">≡</button></div>
+      <div class="sb-section">
+        <div class="sb-label">Browse</div>
+        <div class="sb-item active" onclick="go('s-home')"><span>◫</span><span>Home</span></div>
+        <div class="sb-item" onclick="goMyProfile()"><span>○</span><span>My profile</span></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Fields</div>
+        <div id="sidebar-fields"></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Create</div>
+        <div class="sb-item" onclick="go('s-compose')"><span>+</span><span>New project</span></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Account</div>
+        <div class="sb-item" onclick="logout()"><span>↩</span><span>Sign out</span></div>
+      </div>
+    </aside>
+    <div class="content">
+      <div class="section-label" id="grid-lbl">Recommended for you</div>
+      <div class="projects-grid" id="home-grid"></div>
+      <div id="scroll-sentinel"></div>
+      <footer>© Dakdori — built with intention.</footer>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PROFILE ═══════════════════════════════════ -->
+<div class="screen" id="s-profile">
+  <div class="nav-wrapper">
+    <nav class="nav">
+      <div class="logo" onclick="go('s-home')">Project Dakdori.</div>
+      <div class="nav-center"></div>
+      <div class="nav-right">
+        <button class="theme-btn" onclick="toggleTheme()">light</button>
+        <button class="btn-new" onclick="go('s-compose')">+ New project</button>
+        <div class="avatar-nav" onclick="goMyProfile()">YK</div>
+      </div>
+    </nav>
+  </div>
+  <div class="back-bar">
+    <button onclick="profileBackButton()" id="profile-back-btn">← Back</button>
+    <span class="profile-mode-badge" id="profile-mode-badge">Profile</span>
+  </div>
+  <div class="profile-cover" id="profile-cover">
+    <button class="cover-edit" onclick="document.getElementById('cover-input').click()">Change cover</button>
+    <input type="file" id="cover-input" accept="image/*" style="display:none;" onchange="uploadCover(event)">
+  </div>
+  <div class="profile-body-wrap">
+    <div class="profile-header">
+      <div class="profile-av-large" id="profile-av-large">
+        <span id="prof-av-init">YK</span>
+        <span class="av-edit" title="Change avatar" onclick="document.getElementById('avatar-input').click()">✎</span>
+        <input type="file" id="avatar-input" accept="image/*" style="display:none;" onchange="uploadAvatar(event)">
+      </div>
+      <div class="profile-id">
+        <div class="profile-name" data-field="name">Loading…</div>
+        <div class="profile-handle" data-field="handle">@…</div>
+        <div class="profile-headline" data-field="headline"></div>
+        <div class="profile-meta-row">
+          <span>📍 <span class="location-field" data-field="location" onclick="openLocationPicker(this)">—</span></span>
+          <span>🕐 <span data-field="availability" contenteditable="false">—</span></span>
+          <span>🌐 <span data-field="website" contenteditable="false">—</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-actions" id="profile-actions-read">
+      <button class="btn-primary" id="profile-invite-btn" onclick="openInviteFromProfile()">+ Invite to collaborate</button>
+      <button class="btn-secondary" id="profile-follow-btn" onclick="toggleFollow()">Follow</button>
+      <button class="btn-secondary" id="profile-edit-btn" onclick="toggleProfileEdit(true)" style="display:none;">Edit profile</button>
+      <button class="btn-secondary" id="profile-preview-btn" onclick="toggleProfileView()" style="display:none;">View as visitor</button>
+    </div>
+    <div class="profile-actions" id="profile-actions-edit" style="display:none;">
+      <button class="btn-primary" onclick="saveProfile()">Save changes</button>
+      <button class="btn-secondary" onclick="cancelProfile()">Cancel</button>
+      <button class="btn-secondary" onclick="toggleProfileView()">Preview</button>
+    </div>
+
+    <div class="profile-stats-row">
+      <div class="profile-stat-card"><strong id="stat-projects">0</strong><span>projects</span></div>
+      <div class="profile-stat-card"><strong id="stat-followers">0</strong><span>followers</span></div>
+      <div class="profile-stat-card"><strong id="stat-following">0</strong><span>following</span></div>
+      <div class="profile-stat-card"><strong id="stat-collabs">0</strong><span>collaborations</span></div>
+    </div>
+
+    <div class="profile-tabs">
+      <div class="p-tab active" onclick="switchProfileTab(this,'tab-projects')">Projects</div>
+      <div class="p-tab" onclick="switchProfileTab(this,'tab-about')">About</div>
+      <div class="p-tab" onclick="switchProfileTab(this,'tab-experience')">Experience</div>
+      <div class="p-tab" onclick="switchProfileTab(this,'tab-reviews')">Reviews</div>
+    </div>
+
+    <div class="profile-tab-content active" id="tab-projects">
+      <div class="projects-grid" id="profile-grid"></div>
+    </div>
+
+    <div class="profile-tab-content" id="tab-about">
+      <div class="section-title">About <span class="add-inline" onclick="addAboutField()">+ Add field</span></div>
+      <div class="about-bio" data-field="bio" contenteditable="false">No bio yet.</div>
+      <div class="about-grid" id="about-grid"></div>
+      <div class="section-divider"></div>
+      <div class="section-title">Skills <span class="add-inline" onclick="addTag('skills-grid')">+ Add</span></div>
+      <div class="tag-grid" id="skills-grid"></div>
+      <div class="section-title" style="margin-top:1.5rem;">Tools <span class="add-inline" onclick="addTag('tools-grid')">+ Add</span></div>
+      <div class="tag-grid" id="tools-grid"></div>
+    </div>
+
+    <div class="profile-tab-content" id="tab-experience">
+      <div class="section-title">Experience <span class="add-inline" onclick="addExperience('exp-list')">+ Add experience</span></div>
+      <div class="experience-list" id="exp-list"></div>
+      <div class="section-divider"></div>
+      <div class="section-title">Education <span class="add-inline" onclick="addExperience('edu-list')">+ Add education</span></div>
+      <div class="experience-list" id="edu-list"></div>
+    </div>
+
+    <div class="profile-tab-content" id="tab-reviews">
+      <div class="section-title">Endorsements & reviews</div>
+      <div class="review-list" id="review-list"></div>
+      <div id="review-write-area" style="margin-top:2rem; display:none;">
+        <div class="cs-label">Write a review</div>
+        <textarea id="review-body" rows="3" style="width:100%; border:1px solid var(--border-color); border-radius:8px; padding:10px;" placeholder="What was it like to work with this person?"></textarea>
+        <input type="text" id="review-meta" placeholder="Optional context (e.g. 'collaborated on …')" style="margin-top:8px; width:100%; border:1px solid var(--border-color); border-radius:16px; padding:6px 12px; font-size:0.85rem;">
+        <button class="btn-primary" style="margin-top:8px;" onclick="submitReview()">Post review</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PROJECT DETAIL ═══════════════════════════════════ -->
+<div class="screen" id="s-detail">
+  <div class="nav-wrapper">
+    <nav class="nav">
+      <div class="logo" onclick="go('s-home')">Project Dakdori.</div>
+      <div class="nav-center"></div>
+      <div class="nav-right">
+        <button class="theme-btn" onclick="toggleTheme()">light</button>
+        <button class="btn-new" onclick="go('s-compose')">+ New project</button>
+        <div class="avatar-nav" onclick="goMyProfile()">YK</div>
+      </div>
+    </nav>
+  </div>
+  <div class="back-bar"><button onclick="go('s-home')">← Back to home</button></div>
+  <div class="detail-layout">
+    <div class="detail-main">
+      <div class="detail-visual" id="d-visual">No media uploaded</div>
+      <div class="detail-info">
+        <div class="detail-title" id="d-title">–</div>
+        <div class="detail-meta">
+          <span id="d-author">–</span><span>·</span>
+          <span id="d-field">–</span><span>·</span>
+          <span id="d-time" style="font-size:0.8rem;"></span>
+        </div>
+        <p class="detail-desc" id="d-desc">–</p>
+        <div class="detail-section-label">Team & open roles</div>
+        <div class="team-slots" id="d-slots"></div>
+        <div class="card-back-tags" id="d-tags" style="margin-top:1rem;"></div>
+      </div>
+    </div>
+    <aside class="detail-sidebar">
+      <div class="author-block" id="d-author-block">
+        <div class="author-row">
+          <div class="author-av" id="d-av">–</div>
+          <div>
+            <div class="author-name" id="d-anm">–</div>
+            <div class="author-role-text" id="d-arole">–</div>
+          </div>
+        </div>
+        <div class="author-bio-text" id="d-abio">–</div>
+        <button class="btn-invite-full" onclick="event.stopPropagation();openInvite()">+ Invite to collaborate</button>
+      </div>
+      <div class="related-label">More from this field</div>
+      <div id="d-related"></div>
+    </aside>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ COMPOSE ═══════════════════════════════════ -->
+<div class="screen" id="s-compose">
+  <div class="nav-wrapper">
+    <nav class="nav">
+      <div class="logo" onclick="go('s-home')">Project Dakdori.</div>
+      <div class="nav-center"></div>
+      <div class="nav-right">
+        <button class="theme-btn" onclick="toggleTheme()">light</button>
+        <div class="avatar-nav" onclick="goMyProfile()">YK</div>
+      </div>
+    </nav>
+  </div>
+  <div class="back-bar"><button onclick="discardCompose()">← Discard</button></div>
+  <div class="compose-wrap">
+    <div class="compose-main">
+      <input type="text" class="compose-title" id="cmp-title" placeholder="Project title" maxlength="200">
+      <textarea class="compose-body" id="cmp-body" placeholder="Describe your project. What are you building? Who do you need?" maxlength="20000"></textarea>
+      <div class="compose-drop" onclick="document.getElementById('cmp-files').click()">
+        Drop media here, or click to upload<br>
+        <span style="font-size:0.75rem;color:var(--text-secondary);">Images, video, PDF — max 20MB each</span>
+        <input type="file" id="cmp-files" accept="image/*,video/*,application/pdf" multiple style="display:none;" onchange="previewComposeFiles(event)">
+      </div>
+      <div id="cmp-thumbs"></div>
+      <div class="compose-actions">
+        <button class="btn-publish" onclick="publishProject()">Publish</button>
+        <button class="btn-draft" onclick="discardCompose()">Discard</button>
+      </div>
+    </div>
+    <aside class="compose-side">
+      <div class="cs-section">
+        <div class="cs-label">Field</div>
+        <select class="cs-select" id="cmp-field">
+          <option value="">Select field…</option>
+        </select>
+      </div>
+      <div class="cs-section">
+        <div class="cs-label">Tags (Enter to add)</div>
+        <input class="cs-input" id="cmp-tag-input" type="text" placeholder="Add tag" onkeydown="addComposeTag(event)">
+        <div class="tag-grid" id="cmp-tags" style="margin-top:8px;"></div>
+      </div>
+      <div class="cs-section">
+        <div class="cs-label">Roles needed</div>
+        <div id="cmp-roles"></div>
+        <input class="cs-input" id="cmp-role-input" type="text" placeholder="Add role (Enter)" style="margin-top:6px;" onkeydown="addComposeRole(event)">
+      </div>
+      <div class="cs-section">
+        <div class="cs-label">Visibility</div>
+        <select class="cs-select" id="cmp-visibility">
+          <option value="public">Public</option>
+          <option value="followers">Followers only</option>
+          <option value="invite">Invite only</option>
+        </select>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ COMMUNITY ═══════════════════════════════════ -->
+<div class="screen" id="s-community">
+  <div class="nav-wrapper">
+    <nav class="nav">
+      <div class="logo" onclick="go('s-home')">Project Dakdori.</div>
+      <div class="nav-center">
+        <div class="search-row">
+          <div class="search-row-inner">
+            <div class="search-box-wrap" onfocusin="this.classList.add('focused')" onfocusout="this.classList.remove('focused')">
+              <span class="search-icon-slot">📖</span>
+              <div class="search-box"><input type="text" placeholder="Search"></div>
+            </div>
+            <button class="nav-search-btn">Search</button>
+          </div>
+        </div>
+      </div>
+      <div class="nav-right">
+        <button class="theme-btn" onclick="toggleTheme()">light</button>
+        <button class="btn-new" onclick="go('s-compose')">+ New project</button>
+        <div class="avatar-nav" onclick="goMyProfile()">YK</div>
+      </div>
+    </nav>
+  </div>
+  <div class="back-bar"><button onclick="go('s-home')">← Back to home</button></div>
+  <div class="community-wrap">
+    <div class="community-feed">
+      <div class="community-head">
+        <div class="community-hero">
+          <div class="community-icon" id="c-icon">□</div>
+          <div>
+            <div class="community-title" id="c-name">–</div>
+            <div class="community-members" id="c-members">–</div>
+          </div>
+          <button class="btn-join">Join</button>
+        </div>
+        <div class="community-desc" id="c-desc">–</div>
+        <div class="feed-tabs"><div class="feed-tab active">Feed</div></div>
+      </div>
+      <div class="feed-compose-box">
+        <div class="feed-av" id="c-feed-av">YK</div>
+        <div class="feed-input-wrap">
+          <textarea class="feed-input" id="c-post-body" rows="2" placeholder="Share something with this community…"></textarea>
+          <div class="feed-post-actions"><button class="btn-post" onclick="submitPost()">Post</button></div>
+        </div>
+      </div>
+      <div id="c-posts"></div>
+    </div>
+    <aside class="community-aside">
+      <div class="aside-section">
+        <div class="aside-label">About this community</div>
+        <div style="font-size:0.85rem; color:var(--text-secondary); line-height:1.6;" id="c-about-text"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ MODALS ═══════════════════════════════════ -->
+<div class="modal-bg" id="invite-modal">
+  <div class="modal">
+    <div class="modal-title">Invite to project</div>
+    <div class="modal-sub">Search by name or handle to find collaborators</div>
+    <input class="modal-search-input" type="text" id="invite-search" placeholder="Search name or handle…" oninput="searchInviteUsers()">
+    <div id="modal-list"></div>
+    <button class="modal-cancel" onclick="closeInvite()">Cancel</button>
+  </div>
+</div>
+
+<div class="location-modal-bg" id="location-modal">
+  <div class="location-modal">
+    <div class="location-modal-header">
+      <div class="modal-title">Set location</div>
+      <div class="modal-sub">Search and select a city</div>
+      <input type="text" class="location-search" id="location-search-input" placeholder="Search city, country…" oninput="filterLocations()">
+    </div>
+    <div class="location-map" id="location-map">
+      <svg id="world-map-svg" viewBox="0 0 720 360" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <g id="world-map-land"></g>
+        <circle id="world-map-pin" cx="-100" cy="-100" r="5" fill="var(--text-color)" stroke="var(--bg-color)" stroke-width="2" style="display:none;"/>
+      </svg>
+      <div class="location-pin-label" id="location-pin-label">No location selected</div>
+    </div>
+    <div class="location-results" id="location-results"></div>
+    <div class="location-modal-actions">
+      <button class="btn-secondary" onclick="closeLocationPicker()">Cancel</button>
+      <button class="btn-primary" id="location-confirm" onclick="confirmLocation()" disabled>Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/state.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/home.js"></script>
+<script src="/js/profile.js"></script>
+<script src="/js/project.js"></script>
+<script src="/js/compose.js"></script>
+<script src="/js/community.js"></script>
+<script src="/js/location.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
